@@ -57,7 +57,7 @@ const World = struct {
     pub fn getBufferByName(self: *World, name: []const u8) !*Buffer {
         var bufferToCheck = self.bufferList.nextBuffer;
 
-        while (&bufferToCheck != &self.bufferList) {
+        while (bufferToCheck != self.bufferList) {
             if (std.mem.eql(u8, name, bufferToCheck.bufferName)) {
                 return bufferToCheck;
             }
@@ -81,7 +81,7 @@ const World = struct {
         // verify no name collisions
         var bufferToCheck = self.bufferList.nextBuffer;
 
-        while (&bufferToCheck != &self.bufferList) {
+        while (bufferToCheck != self.bufferList) {
             if (std.mem.eql(u8, name, bufferToCheck.bufferName)) {
                 return BufferError.NameCollision;
             }
@@ -116,7 +116,7 @@ const World = struct {
         var foundBufferWithName = false;
 
         // use setBufferNext????
-        while (&bufferToCheck != &self.bufferList) {
+        while (bufferToCheck != self.bufferList) {
             if (std.mem.eql(u8, name, bufferToCheck.bufferName)) {
                 foundBufferWithName = true;
                 break;
@@ -171,64 +171,67 @@ const World = struct {
 
     /// Set the point to the specified location
     pub fn pointSet(self: *World, location: Location) !void {
-        _ = self;
-        _ = location;
-
+        self.currentBuffer.point = location;
     }
 
     /// Move point forward n chars
     pub fn pointMoveForward(self: *World, n: usize) !void {
-        _ = self;
-        _ = n;
+        const currentCount = locationToCount(self, pointGetLocation(self));
 
+        self.currentBuffer.point = countToLocation(self, currentCount + n);
     }
 
     /// Move backward n chars
     pub fn pointMoveBackward(self: *World, n: usize) !void {
-        _ = self;
-        _ = n;
+        const currentCount = locationToCount(self, pointGetLocation(self));
 
+        self.currentBuffer.point = countToLocation(self, currentCount - n);
     }
 
     pub fn pointGetLocation(self: *World) Location {
-        _ = self;
-
+        return self.currentBuffer.point;
     }
 
     /// Get the line number that the point is on
     pub fn pointGetLine(self: *World) usize {
-        _ = self;
-
+        return self.currentBuffer.currentLine;
     }
 
     /// Return point to the start of the buffer
     pub fn pointMoveBufferStart(self: *World) Location {
-        _ = self;
+        self.currentBuffer.point = countToLocation(self, 0);
 
+        return pointGetLocation(self);
     }
 
     /// Move point to the end of the buffer
     pub fn pointMoveBufferEnd(self: *World) Location {
-        _ = self;
+        self.currentBuffer.point = countToLocation(self, self.currentBuffer.numChars);
 
+        return pointGetLocation(self);
     }
 
     /// Returns 0 if same location, 1 if l1 after 12, else -1
-    pub fn compareLocations(self: *World, locat1: Location, locat2: Location) !i32 {
+    pub fn compareLocations(self: *World, l1: Location, l2: Location) i32 {
         _ = self;
 
+        return l1.compare(l2);
     }
 
-    /// Converts a Location to the number of characters between start and l
-    pub fn locationToCount(self: *World, locat: Location) !usize {
-        _ = self;
+    /// Converts a Location to the number of characters between start and location
+    pub fn locationToCount(self: *World, location: Location) !usize {
+        const cbuff = self.currentBuffer;
 
+        return if (location.pos < cbuff.gapStart) location.pos
+               else location.pos + (cbuff.gapEnd - cbuff.gapStart);
     }
 
     /// Converts a count (absolute position) to a location
     pub fn countToLocation(self: *World, count: usize) !Location {
-        _ = self;
+        const cbuff = self.currentBuffer;
 
+        return if (count < cbuff.gapStart) .{ .pos = count }
+               else .{ .pos = count + (cbuff.gapEnd - cbuff.gapStrat) };
     }
 
     // ---
@@ -272,9 +275,10 @@ const World = struct {
     }
 
     /// Move mark to location
-    pub fn markSet(self: *World, name: []const u8, locat: Location) !void {
+    pub fn markSet(self: *World, name: []const u8, location: Location) !void {
         _ = self;
         _ = name;
+        _ = location;
 
     }
 
@@ -570,6 +574,10 @@ const Buffer = struct {
     /// A string name for users to refer to the buffer by
     bufferName: []const u8,
 
+    /// Buffer Gap positions
+    gapStart: usize,
+    gapEnd: usize,
+
     /// The current location where edit operations take place.
     point: Location,
     /// Tracks current line position efficiently
@@ -612,6 +620,20 @@ const Buffer = struct {
 
     }
 
+};
+
+const Location = struct {
+    pos: usize,
+
+    pub fn compare(self: Location, other: Location) i32 {
+        if (self.pos == other.pos) {
+            return 0;
+        } else if (self.pos > other.pos) {
+            return 1;
+        } else {
+            return -1;
+        }
+    }
 };
 
 const Mark = struct {
