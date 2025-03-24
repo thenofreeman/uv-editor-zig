@@ -3,6 +3,12 @@ const std = @import("std");
 // notes:
 // -- consider using ids for buffers (get by id, set by id..)?
 
+const BufferError = error {
+    NameCollision,
+    NoSuchBuffer,
+    ModifyingScratchBuffer,
+};
+
 const World = struct {
     bufferList: *Buffer,
     currentBuffer: *Buffer,
@@ -10,12 +16,16 @@ const World = struct {
     /// Called once by the editor to create the editing world
     /// if failed, we cannot call any world procedures
     /// creates one empty (scratch?) buffer
-    /// attempts to restore previous session?
     pub fn init(allocator: std.mem.Allocator) !World {
         _ = allocator;
 
-        return . {
+        const scratchBuffer = bufferCreate(@This(), "<scratch>");
 
+        // TODO: attempt to restore previous session?
+
+        return .{
+            .bufferList = scratchBuffer,
+            .currentBuffer = scratchBuffer,
         };
     }
 
@@ -37,59 +47,126 @@ const World = struct {
 
     /// Load the world state from a file
     /// TODO: should this be in World???? or outside
-    pub fn load(self: *World, filename: []const u8) !void {
-        _ = self;
+    pub fn load(filename: []const u8) !World {
         _ = filename;
 
     }
 
+
+    // use setBufferNext????
+    pub fn getBufferByName(self: *World, name: []const u8) !*Buffer {
+        var bufferToCheck = self.bufferList.nextBuffer;
+
+        while (&bufferToCheck != &self.bufferList) {
+            if (std.mem.eql(u8, name, bufferToCheck.bufferName)) {
+                return bufferToCheck;
+            }
+
+            bufferToCheck = bufferToCheck.nextBuffer;
+        }
+
+        if (std.mem.eql(u8, name, bufferToCheck.bufferName)) {
+            return bufferToCheck;
+        }
+
+        return BufferError.NoSuchBuffer;
+    }
+
     /// Creates an empty buffer with the given name
     /// no two buffers can share the same name
-    pub fn bufferCreate(self: *World, name: []const u8) !void {
-        _ = self;
-        _ = name;
+    // use setBufferNext????
+    pub fn bufferCreate(self: *World, name: []const u8) BufferError!void {
+        const newBuffer = Buffer.init(self.allocator, name);
 
+        // verify no name collisions
+        var bufferToCheck = self.bufferList.nextBuffer;
+
+        while (&bufferToCheck != &self.bufferList) {
+            if (std.mem.eql(u8, name, bufferToCheck.bufferName)) {
+                return BufferError.NameCollision;
+            }
+
+            bufferToCheck = bufferToCheck.nextBuffer;
+        }
+
+        if (std.mem.eql(u8, name, bufferToCheck.bufferName)) {
+            return BufferError.NameCollision;
+        }
+
+        // set buffer to first position in chain
+        const temp = self.bufferList.nextBuffer;
+        newBuffer.nextBuffer = temp;
+        self.bufferList.nextBuffer = newBuffer;
     }
 
     /// remove all characters (and marks?) from the specified buffer
     pub fn bufferClear(self: *World, name: []const u8) !void {
-        _ = self;
-        _ = name;
+        var thisBuffer = try getBufferByName(self, name);
 
+        thisBuffer.contents = "";
+        thisBuffer.markList = null;
     }
 
     /// Delete specified buffer, setting the next in the chain to current
     /// if no next, re-create scratch buffer and set it to current
     pub fn bufferDelete(self: *World, name: []const u8) !void {
-        _ = self;
-        _ = name;
+        var bufferToCheck = self.bufferList.nextBuffer;
+        var prevBuffer = self.bufferList;
 
+        var foundBufferWithName = false;
+
+        // use setBufferNext????
+        while (&bufferToCheck != &self.bufferList) {
+            if (std.mem.eql(u8, name, bufferToCheck.bufferName)) {
+                foundBufferWithName = true;
+                break;
+            }
+
+            prevBuffer = bufferToCheck;
+            bufferToCheck = bufferToCheck.nextBuffer;
+        }
+
+        if (std.mem.eql(u8, name, bufferToCheck.bufferName)) {
+            foundBufferWithName = true;
+        }
+
+        if (!foundBufferWithName) {
+            return BufferError.NoSuchBuffer;
+        }
+
+        if (&prevBuffer == &bufferToCheck) {
+            try bufferCreate(self, "<scratch>");
+        } else {
+            prevBuffer.nextBuffer = bufferToCheck.nextBuffer;
+        }
+
+        bufferToCheck.deinit();
     }
 
     /// Set to specified buffer
     pub fn bufferSetCurrent(self: *World, name: []const u8) !void {
-        _ = self;
-        _ = name;
-
+        self.currentBuffer = getBufferByName(self, name);
     }
 
     /// Set buffer to the next in the chain and return the (name?id) of the new one
     pub fn bufferSetNext(self: *World) []const u8 {
-        _ = self;
+        self.currentBuffer = self.currentBuffer.nextBuffer;
 
+        return self.currentBuffer.bufferName;
     }
 
     /// Rename the current buffer
     pub fn bufferRenameCurrent(self: *World, name: []const u8) !void {
-        _ = self;
-        _ = name;
+        if (std.mem.eql(u8, bufferGetCurrentName(self), "<scratch>")) {
+            return BufferError.ModifyingScratchBuffer;
+        }
 
+        self.currentBuffer.bufferName = name;
     }
 
     /// Get the name of the current buffer
     pub fn bufferGetCurrentName(self: *World) []const u8 {
-        _ = self;
-
+        return self.currentBuffer.bufferName;
     }
 
     /// Set the point to the specified location
@@ -471,7 +548,7 @@ const World = struct {
 
     /// Move the point to the desired column
     /// stop at line end if col is greater than length
-    /// specified col may not be reachable due to special chars or tab-stops
+    /// specified col may not be reachable due to special chars or tab-stops, etc
     /// if specified col cannot be exactly reached, use the round flag
     /// if round flag is set: point is rounded to nearest available col
     ///    else point is moved to the next highest available column
@@ -522,7 +599,7 @@ const Buffer = struct {
     /// Must be sorted
     modeList: *Mode,
 
-    pub fn init(allocator: std.mem.Allocator, name: []const u8) !void {
+    pub fn init(allocator: std.mem.Allocator, name: []const u8) !Buffer {
         _ = allocator;
         _ = name;
 
