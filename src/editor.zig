@@ -61,6 +61,26 @@ pub const Editor = struct {
         return ImplementationError.NotYetImplemented;
     }
 
+    pub fn bufferGetByName(self: *Editor, name: []const u8) ?*Buffer {
+        var it = self.bufferList.iterator();
+
+        var bufferWithName = it.next();
+
+        while (bufferWithName != null) : (bufferWithName = it.next()) {
+            if (std.mem.eql(u8, name, bufferWithName.?.name)) {
+                bufferWithName.?.clear();
+                // bufferToClear.markTree.clear();
+
+                return bufferWithName;
+            }
+        }
+
+        return null;
+    }
+
+    /// Creates an empty buffer with the given name
+    /// no two buffers can share the same name
+    // use setBufferNext????
     pub fn bufferCreate(self: *Editor, name: []const u8) !void {
         // TODO: verify no name collisions
 
@@ -71,17 +91,8 @@ pub const Editor = struct {
 
     /// remove all characters (and marks?) from the specified buffer
     pub fn bufferClear(self: *Editor, name: []const u8) !void {
-        var it = self.bufferList.iterator();
-
-        var bufferToClear = it.next();
-
-        while (bufferToClear != null) : (bufferToClear = it.next()) {
-            if (std.mem.eql(u8, name, bufferToClear.?.name)) {
-                bufferToClear.?.clear();
-                // bufferToClear.markTree.clear();
-
-                return;
-            }
+        if (self.bufferGetByName(name) != null) {
+            return;
         }
 
         return BufferError.NoSuchBuffer;

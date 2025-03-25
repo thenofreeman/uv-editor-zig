@@ -8,25 +8,6 @@ const World = struct {
     bufferList: *Buffer,
     currentBuffer: *Buffer,
 
-    // use setBufferNext????
-    pub fn getBufferByName(self: *World, name: []const u8) !*Buffer {
-        var bufferToCheck = self.bufferList.nextBuffer;
-
-        while (bufferToCheck != self.bufferList) {
-            if (std.mem.eql(u8, name, bufferToCheck.bufferName)) {
-                return bufferToCheck;
-            }
-
-            bufferToCheck = bufferToCheck.nextBuffer;
-        }
-
-        if (std.mem.eql(u8, name, bufferToCheck.bufferName)) {
-            return bufferToCheck;
-        }
-
-        return BufferError.NoSuchBuffer;
-    }
-
     /// Creates an empty buffer with the given name
     /// no two buffers can share the same name
     // use setBufferNext????
