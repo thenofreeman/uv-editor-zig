@@ -15,7 +15,7 @@ pub const Buffer = struct {
 
     // markTree: AVLTree(Mark),
 
-    // contents: Storage,
+    contents: []const u8, // Storage
 
     // fileName: []const u8,
     // fileTime: u64,
@@ -32,6 +32,12 @@ pub const Buffer = struct {
 
         return .{
             .name = name,
+            .contents = "THIS IS A TEST!",
         };
+    }
+
+    pub fn clear(self: *Buffer) void {
+        std.debug.print("MATCH FOUND\n", .{});
+        self.contents = "";
     }
 };

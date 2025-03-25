@@ -6,9 +6,16 @@ pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
 
-    const editor = try Editor.init(allocator);
+    var editor = try Editor.init(allocator);
 
-    const head = editor.bufferList.head;
+    var head = try editor.bufferList.getFirst();
 
-    std.debug.print("{s}\n", head.?.value);
+    try editor.bufferCreate("TEST");
+    head = try editor.bufferList.getFirst();
+    std.debug.print("{s}: {s}\n", .{ head.name, head.contents });
+    try editor.bufferClear("TEST");
+    head = try editor.bufferList.getFirst();
+    std.debug.print("{s}: {s}\n", .{ head.name, head.contents });
+
+
 }

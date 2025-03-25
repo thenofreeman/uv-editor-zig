@@ -3,12 +3,6 @@ const std = @import("std");
 // notes:
 // -- consider using ids for buffers (get by id, set by id..)?
 
-const BufferError = error {
-    NameCollision,
-    NoSuchItem,
-    ModifyingScratchBuffer,
-    UseOfNullValue,
-};
 
 const World = struct {
     bufferList: *Buffer,
@@ -58,14 +52,6 @@ const World = struct {
         const temp = self.bufferList.nextBuffer;
         newBuffer.nextBuffer = temp;
         self.bufferList.nextBuffer = newBuffer;
-    }
-
-    /// remove all characters (and marks?) from the specified buffer
-    pub fn bufferClear(self: *World, name: []const u8) !void {
-        var thisBuffer = try getBufferByName(self, name);
-
-        thisBuffer.contents = "";
-        thisBuffer.markList = null;
     }
 
     /// Delete specified buffer, setting the next in the chain to current

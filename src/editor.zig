@@ -5,6 +5,13 @@ const ImplementationError = error {
     NotYetImplemented,
 };
 
+const BufferError = error {
+    NameCollision,
+    NoSuchBuffer,
+    ModifyingScratchBuffer,
+    UseOfNullValue,
+};
+
 const Buffer = @import("buffer.zig").Buffer;
 
 pub const Editor = struct {
@@ -57,10 +64,27 @@ pub const Editor = struct {
     pub fn bufferCreate(self: *Editor, name: []const u8) !void {
         // TODO: verify no name collisions
 
-        const newBuffer = Buffer.init(self.allocator, name);
-        // errdefer newBuffer.deinit();
+        const newBuffer = try Buffer.init(self.allocator, name);
 
-        self.bufferList.addFirst(&newBuffer);
+        try self.bufferList.addFirst(newBuffer);
+    }
+
+    /// remove all characters (and marks?) from the specified buffer
+    pub fn bufferClear(self: *Editor, name: []const u8) !void {
+        var it = self.bufferList.iterator();
+
+        var bufferToClear = it.next();
+
+        while (bufferToClear != null) : (bufferToClear = it.next()) {
+            if (std.mem.eql(u8, name, bufferToClear.?.name)) {
+                bufferToClear.?.clear();
+                // bufferToClear.markTree.clear();
+
+                return;
+            }
+        }
+
+        return BufferError.NoSuchBuffer;
     }
 
 };
