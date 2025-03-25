@@ -14,22 +14,6 @@ const World = struct {
     bufferList: *Buffer,
     currentBuffer: *Buffer,
 
-    /// Save the world state to a file
-    /// TODO: should this be in World???? or outside
-    pub fn save(self: *World, filename: []const u8) !void {
-        _ = self;
-        _ = filename;
-
-    }
-
-    /// Load the world state from a file
-    /// TODO: should this be in World???? or outside
-    pub fn load(filename: []const u8) !World {
-        _ = filename;
-
-    }
-
-
     // use setBufferNext????
     pub fn getBufferByName(self: *World, name: []const u8) !*Buffer {
         var bufferToCheck = self.bufferList.nextBuffer;

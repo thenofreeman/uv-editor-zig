@@ -10,5 +10,5 @@ pub fn main() !void {
 
     const head = editor.bufferList.head;
 
-    std.debug.print("{s}", head.?.value);
+    std.debug.print("{s}\n", head.?.value);
 }

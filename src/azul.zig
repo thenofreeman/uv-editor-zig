@@ -59,7 +59,7 @@ pub fn SelectionList(comptime T: type) type {
         }
 
         pub fn isEmpty(self: *Self) bool {
-            return self.list.size() != 0;
+            return self.length == 0;
         }
 
         pub fn addIndex(self: *Self, value: T, index: usize) !void {
@@ -169,26 +169,26 @@ pub fn SelectionList(comptime T: type) type {
         }
 
         fn addNode(self: *Self, value: T, nodeToShift: ?*Node) !*Node {
-            const newNode = try self.allocator.create(Node);
+            var newNode = try self.allocator.create(Node);
             errdefer self.allocator.destroy(newNode);
 
-            if (nodeToShift) |node| {
-                newNode.* = Node {
-                    .next = node,
-                    .prev = node.prev,
-                    .value = value,
-                };
+            newNode.* = Node {
+                .next = null,
+                .prev = null,
+                .value = value,
+            };
 
-                node.prev = newNode;
-            } else {
-                newNode.* = Node {
-                    .next = newNode,
-                    .prev = newNode,
-                    .value = value,
-                };
+            if (self.isEmpty()) {
+                newNode.next = newNode;
+                newNode.prev = newNode;
 
                 self.head = newNode;
                 self.tail = newNode;
+            } else {
+                newNode.next = nodeToShift;
+                newNode.prev = nodeToShift.?.prev;
+
+                nodeToShift.?.prev = newNode;
             }
 
             self.length += 1;
