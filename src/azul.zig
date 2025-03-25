@@ -226,6 +226,38 @@ pub fn SelectionList(comptime T: type) type {
             return current.?;
         }
 
+        pub fn iterator(self: *Self) Iterator {
+            return Iterator {
+                .current = self.head,
+                .counter = 0,
+                .length = self.length,
+            };
+        }
+
+        pub const Iterator = struct {
+            current: ?*Node,
+            counter: usize,
+            length: usize,
+
+            pub fn next(self: *Iterator) ?*T {
+                const node = self.current;
+
+                if (self.counter == self.length) {
+                    return null;
+                }
+
+                self.counter += 1;
+
+                if (node) |n| {
+                    self.current = n.next;
+
+                    return &n.value;
+                }
+
+                return null;
+            }
+        };
+
         fn isIndexWithinBounds(self: *Self, index: usize) bool {
             return (index > 0) and (index <= self.length);
         }
