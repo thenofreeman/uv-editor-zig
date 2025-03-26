@@ -84,13 +84,13 @@ pub fn SelectionList(comptime T: type) type {
             _ = try self.addNode(value, self.active.next);
         }
 
-        pub fn selectIndex(self: *Self, index: usize) !T {
+        pub fn selectIndex(self: *Self, index: usize) !*T {
             self.active = try self.getNodeAtIndex(index);
 
             return try self.getSelected();
         }
 
-        pub fn selectPrev(self: *Self) !T {
+        pub fn selectPrev(self: *Self) !*T {
             if (self.isEmpty()) {
                 return ListError.EmptyListError;
             }
@@ -100,7 +100,7 @@ pub fn SelectionList(comptime T: type) type {
             return try self.getSelected();
         }
 
-        pub fn selectNext(self: *Self) !T {
+        pub fn selectNext(self: *Self) !*T {
             if (self.isEmpty()) {
                 return ListError.EmptyListError;
             }
@@ -110,33 +110,33 @@ pub fn SelectionList(comptime T: type) type {
             return try self.getSelected();
         }
 
-        pub fn selectFirst(self: *Self) !T {
+        pub fn selectFirst(self: *Self) !*T {
             self.active = self.head;
 
             return try self.getSelected();
         }
 
-        pub fn selectLast(self: *Self) !T {
+        pub fn selectLast(self: *Self) !*T {
             self.active = self.tail;
 
             return try self.getSelected();
         }
 
-        pub fn getSelected(self: *Self) !T {
+        pub fn getSelected(self: *Self) !*T {
             if (self.active) |active| {
-                return active.value;
+                return &active.value;
             }
 
             return ListError.NoSelectionMade;
         }
 
-        pub fn getAtIndex(self: *Self, index: usize) !T {
+        pub fn getAtIndex(self: *Self, index: usize) !*T {
             const nodeAtIndex = try self.getNodeAtIndex(index);
 
             return nodeAtIndex.value;
         }
 
-        pub fn getFirst(self: *Self) !T {
+        pub fn getFirst(self: *Self) !*T {
             if (self.head) |head| {
                 return head.value;
             }
@@ -144,7 +144,7 @@ pub fn SelectionList(comptime T: type) type {
             return ListError.EmptyListError;
         }
 
-        pub fn getLast(self: *Self) !T {
+        pub fn getLast(self: *Self) !*T {
             if (self.tail) |tail| {
                 return tail.value;
             }
