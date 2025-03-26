@@ -123,4 +123,22 @@ pub const Editor = struct {
         return BufferError.NoSuchBuffer;
     }
 
+    /// Set to specified buffer to active
+    pub fn bufferSetCurrent(self: *Editor, name: []const u8) !void {
+        var it = self.bufferList.iterator();
+
+        var bufferWithName: *Buffer = undefined;
+
+        while (it.hasNext()) {
+            bufferWithName = try it.next();
+            if (std.mem.eql(u8, name, bufferWithName.name)) {
+                _ = try it.select();
+
+                return;
+            }
+        }
+
+        return BufferError.NoSuchBuffer;
+    }
+
 };
