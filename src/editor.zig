@@ -33,7 +33,7 @@ pub const Editor = struct {
         const scratchBuffer = try Buffer.init(allocator, "<scratch>");
 
         try bufferList.addFirst(scratchBuffer);
-        _ = try bufferList.selectFirst();
+        _ = bufferList.selectFirst();
 
         return .{
             .bufferList = bufferList,
@@ -141,63 +141,64 @@ pub const Editor = struct {
     }
 
     /// Set buffer to the next in the chain and return the (name?id) of the new one
-    pub fn bufferSetNext(self: *Editor) ![]const u8 {
-        return (try self.bufferList.selectNext()).name;
+    pub fn bufferSetNext(self: *Editor) []const u8 {
+        return self.bufferList.selectNext().?.name;
     }
 
     /// Rename the current buffer
-    pub fn bufferRenameCurrent(self: *Editor, name: []const u8) !void {
+    pub fn bufferRenameCurrent(self: *Editor, name: []const u8) void {
         // TODO: verifiy not scratch buffer
 
-        (try self.bufferList.getSelected()).name = name;
+        self.bufferList.getSelected().?.name = name;
     }
 
     /// Get the name of the current buffer
-    pub fn bufferGetCurrentName(self: *Editor) ![]const u8 {
-        return (try self.bufferList.getSelected()).name;
+    pub fn bufferGetCurrentName(self: *Editor) []const u8 {
+        return self.bufferList.getSelected().?.name;
     }
 
     /// Set the point to the specified location
-    pub fn pointSet(self: *Editor, location: Location) !void {
-        (try self.bufferList.getSelected()).point = location;
+    pub fn pointSet(self: *Editor, location: Location) void {
+        self.bufferList.getSelected().?.point = location;
     }
 
     /// Move point forward n chars
-    pub fn pointMoveForward(self: *Editor, n: usize) !void {
-        const currentCount = try self.locationToCount(try self.pointGetLocation());
+    pub fn pointMoveForward(self: *Editor, n: usize) void {
+        const currentCount = self.locationToCount(self.pointGetLocation());
 
-        (try self.bufferList.getSelected()).point = try self.countToLocation(currentCount + n);
+        self.pointSet(self.countToLocation(currentCount + n));
     }
 
     /// Move point backward n chars
-    pub fn pointMoveBackward(self: *Editor, n: usize) !void {
-        const currentCount = try self.locationToCount(try self.pointGetLocation());
+    pub fn pointMoveBackward(self: *Editor, n: usize) void {
+        const currentCount = self.locationToCount(self.pointGetLocation());
 
-        (try self.bufferList.getSelected()).point = try self.countToLocation(currentCount - n);
+        self.pointSet(self.countToLocation(currentCount - n));
     }
 
-    pub fn pointGetLocation(self: *Editor) !Location {
-        return (try self.bufferList.getSelected()).point;
+    pub fn pointGetLocation(self: *Editor) Location {
+        return self.bufferList.getSelected().?.point;
     }
 
     /// Get the line number that the point is on
-    pub fn pointGetLine(self: *Editor) !usize {
-        return (try self.bufferList.getSelected()).currentLine;
+    pub fn pointGetLine(self: *Editor) usize {
+        return self.bufferList.getSelected().?.currentLine;
     }
 
     /// Return point to the start of the buffer
-    pub fn pointMoveBufferStart(self: *Editor) !Location {
-        (try self.bufferList.getSelected()).point = try self.countToLocation(0);
+    pub fn pointMoveBufferStart(self: *Editor) Location {
+        self.bufferList.getSelected().?.point = self.countToLocation(0);
 
-        return try self.pointGetLocation();
+        return self.pointGetLocation();
     }
 
     /// Move point to the end of the buffer
-    pub fn pointMoveBufferEnd(self: *Editor) !Location {
-        var currentBuffer = (try self.bufferList.getSelected());
-        currentBuffer.point = try self.countToLocation(currentBuffer.numChars);
+    pub fn pointMoveBufferEnd(self: *Editor) Location {
+        const cbuff = self.bufferList.getSelected().?;
 
-        return try self.pointGetLocation();
+        self.pointSet(self.countToLocation(cbuff.numChars));
+
+        return self.pointGetLocation();
     }
 
     /// Returns 0 if same location, 1 if l1 after 12, else -1
@@ -208,30 +209,32 @@ pub const Editor = struct {
     }
 
     /// Converts a Location to the number of characters between start and location
-    pub fn locationToCount(self: *Editor, location: Location) !usize {
-        const cbuff = (try self.bufferList.getSelected());
+    pub fn locationToCount(self: *Editor, location: Location) usize {
+        const cbuff = self.bufferList.getSelected().?;
 
         return if (location.pos < cbuff.gapStart) location.pos
-               else location.pos + (cbuff.gapEnd - cbuff.gapStart);
+                else location.pos + (cbuff.gapEnd - cbuff.gapStart);
     }
 
     /// Converts a count (absolute position) to a location
-    pub fn countToLocation(self: *Editor, count: usize) !Location {
-        const cbuff = (try self.bufferList.getSelected());
+    pub fn countToLocation(self: *Editor, count: usize) Location {
+        const cbuff = self.bufferList.getSelected().?;
+
+        var adjustedCount = count;
 
         if (count > cbuff.numChars) {
-            return BufferError.UnnamedError;
+            adjustedCount = cbuff.numChars;
         }
 
-        return if (count >= cbuff.gapStart) .{ .pos = count }
-               else .{ .pos = count - (cbuff.gapEnd - cbuff.gapStart) };
+        return if (adjustedCount >= cbuff.gapStart) .{ .pos = adjustedCount }
+               else .{ .pos = adjustedCount - (cbuff.gapEnd - cbuff.gapStart) };
     }
 
     // Get the pecentage of the point within in the buffer
     // ie. how far in the file is it
-    pub fn pointPercentInBuffer(self: *Editor) !f32 {
-        return @as(f32, @floatFromInt(try locationToCount((try self.bufferList.getSelected()).point))) * 100.0
-                / @as(f32, @floatFromInt(try self.getNumChars()));
+    pub fn pointPercentInBuffer(self: *Editor) f32 {
+        return @as(f32, @floatFromInt(locationToCount(self.bufferList.getSelected().?.point))) * 100.0
+                / @as(f32, @floatFromInt(self.getNumChars()));
     }
 
 

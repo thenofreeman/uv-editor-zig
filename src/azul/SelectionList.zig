@@ -91,44 +91,44 @@ pub fn SelectionList(comptime T: type) type {
             return try self.getSelected();
         }
 
-        pub fn selectPrev(self: *Self) !*T {
-            if (self.isEmpty()) {
-                return ListError.EmptyListError;
+        pub fn selectPrev(self: *Self) ?*T {
+            if (self.active) |active| {
+                self.active = active.prev;
+
+                return self.getSelected();
             }
 
-            self.active = self.active.?.prev;
-
-            return try self.getSelected();
+            return null;
         }
 
-        pub fn selectNext(self: *Self) !*T {
-            if (self.isEmpty()) {
-                return ListError.EmptyListError;
+        pub fn selectNext(self: *Self) ?*T {
+            if (self.active) |active| {
+                self.active = active.next;
+
+                return self.getSelected();
             }
 
-            self.active = self.active.?.next;
-
-            return try self.getSelected();
+            return null;
         }
 
-        pub fn selectFirst(self: *Self) !*T {
+        pub fn selectFirst(self: *Self) ?*T {
             self.active = self.head;
 
-            return try self.getSelected();
+            return self.getSelected();
         }
 
-        pub fn selectLast(self: *Self) !*T {
+        pub fn selectLast(self: *Self) ?*T {
             self.active = self.tail;
 
-            return try self.getSelected();
+            return self.getSelected();
         }
 
-        pub fn getSelected(self: *Self) !*T {
+        pub fn getSelected(self: *Self) ?*T {
             if (self.active) |active| {
                 return &active.value;
             }
 
-            return ListError.NoSelectionMade;
+            return null;
         }
 
         pub fn getAtIndex(self: *Self, index: usize) !*T {
