@@ -61,21 +61,23 @@ pub const Editor = struct {
         return ImplementationError.NotYetImplemented;
     }
 
-    pub fn bufferGetByName(self: *Editor, name: []const u8) ?*Buffer {
+    pub fn bufferCount(self: *Editor) usize {
+        return self.bufferList.length;
+    }
+
+    pub fn bufferGetByName(self: *Editor, name: []const u8) !*Buffer {
         var it = self.bufferList.iterator();
 
-        var bufferWithName = it.next();
+        var bufferWithName: *Buffer = undefined;
 
-        while (bufferWithName != null) : (bufferWithName = it.next()) {
-            if (std.mem.eql(u8, name, bufferWithName.?.name)) {
-                bufferWithName.?.clear();
-                // bufferToClear.markTree.clear();
-
+        while (it.hasNext()) {
+            bufferWithName = try it.next();
+            if (std.mem.eql(u8, name, bufferWithName.name)) {
                 return bufferWithName;
             }
         }
 
-        return null;
+        return BufferError.NoSuchBuffer;
     }
 
     /// Creates an empty buffer with the given name
@@ -91,8 +93,31 @@ pub const Editor = struct {
 
     /// remove all characters (and marks?) from the specified buffer
     pub fn bufferClear(self: *Editor, name: []const u8) !void {
-        if (self.bufferGetByName(name) != null) {
+        const bufferWithName = self.bufferGetByName(name);
+        if (bufferWithName) |buffer| {
+            buffer.clear();
+            // buffer.markTree.clear();
+
             return;
+        }
+
+        return BufferError.NoSuchBuffer;
+    }
+
+    /// Delete specified buffer, setting the next in the chain to current
+    /// if no next, re-create scratch buffer and set it to current
+    pub fn bufferDelete(self: *Editor, name: []const u8) !void {
+        var it = self.bufferList.iterator();
+
+        var bufferWithName: *Buffer = undefined;
+
+        while (it.hasNext()) {
+            bufferWithName = try it.next();
+            if (std.mem.eql(u8, name, bufferWithName.name)) {
+                _ = try it.remove();
+
+                return;
+            }
         }
 
         return BufferError.NoSuchBuffer;

@@ -37,7 +37,6 @@ pub const Buffer = struct {
     }
 
     pub fn clear(self: *Buffer) void {
-        std.debug.print("MATCH FOUND\n", .{});
         self.contents = "";
     }
 };
