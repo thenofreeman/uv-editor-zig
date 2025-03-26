@@ -228,33 +228,57 @@ pub fn SelectionList(comptime T: type) type {
 
         pub fn iterator(self: *Self) Iterator {
             return Iterator {
-                .current = self.head,
-                .counter = 0,
-                .length = self.length,
+                .current = null,
+                .nextIndex = 1,
+                .list = self,
             };
         }
 
         pub const Iterator = struct {
             current: ?*Node,
-            counter: usize,
-            length: usize,
+            nextIndex: usize,
+            list: *SelectionList(T),
 
-            pub fn next(self: *Iterator) ?*T {
-                const node = self.current;
+            pub fn hasNext(self: *Iterator) bool {
+                std.debug.print("{d}:{d}!\n", .{self.list.length, self.nextIndex});
+                return self.nextIndex < self.list.length;
+            }
 
-                if (self.counter == self.length) {
-                    return null;
+            pub fn next(self: *Iterator) !*T {
+                if (!self.hasNext()) {
+                    return ListError.BadListIndexError;
                 }
 
-                self.counter += 1;
-
-                if (node) |n| {
-                    self.current = n.next;
-
-                    return &n.value;
+                if (self.current == null) {
+                    self.current = self.list.head;
+                } else {
+                    self.current = self.current.?.next;
                 }
 
-                return null;
+                self.nextIndex += 1;
+
+                return &self.current.?.value;
+            }
+
+            pub fn remove(self: *Iterator) !T {
+                if (self.current) |current| {
+                    current.prev.?.next = current.next;
+                    current.next.?.prev = current.prev;
+
+                    std.debug.print("REMOVEME: {s}\n", .{ current.value.name });
+
+                    self.list.allocator.destroy(current);
+
+                    const removedValue = current.value;
+                    self.current = current.next;
+
+                    self.list.length -= 1;
+                    self.nextIndex -= 1;
+
+                    return removedValue;
+                }
+
+                return ListError.EmptyListError;
             }
         };
 
