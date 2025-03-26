@@ -1,7 +1,11 @@
 const std = @import("std");
 
-const SelectionList = @import("azul.zig").SelectionList;
+const azul = @import("azul.zig");
+
 const Location = @import("location.zig").Location;
+
+const Mark = @import("mark.zig").Mark;
+const MarkNode = azul.SplayTree(Mark).Node;
 
 const ImplementationError = error {
     NotYetImplemented,
@@ -18,7 +22,8 @@ const BufferError = error {
 const Buffer = @import("buffer.zig").Buffer;
 
 pub const Editor = struct {
-    bufferList: SelectionList(Buffer),
+    bufferList: azul.SelectionList(Buffer),
+    markTree: azul.SplayTree(Mark),
 
     allocator: std.mem.Allocator,
 
@@ -26,7 +31,7 @@ pub const Editor = struct {
     /// if failed, we cannot call any world procedures
     /// creates one empty (scratch?) buffer
     pub fn init(allocator: std.mem.Allocator) !Editor {
-        var bufferList = SelectionList(Buffer).init(allocator);
+        var bufferList = azul.SelectionList(Buffer).init(allocator);
 
         // TODO: attempt to restore previous session?
 
@@ -37,6 +42,7 @@ pub const Editor = struct {
 
         return .{
             .bufferList = bufferList,
+            .markTree = azul.SplayTree(Mark).init(),
             .allocator = allocator,
         };
     }
@@ -237,5 +243,74 @@ pub const Editor = struct {
                 / @as(f32, @floatFromInt(self.getNumChars()));
     }
 
+    /// Create a mark of fix-type at current point position
+    /// and return it
+    pub fn markCreate(self: *Editor, isFixed: bool) !*MarkNode {
+        var newMarkNode = try self.allocator.create(azul.SplayTree(Mark).Node);
 
+        newMarkNode.value = Mark {
+            .point = self.pointGetLocation(),
+            .isFixed = isFixed,
+        };
+
+        self.markTree.insert(newMarkNode);
+
+        return newMarkNode;
+    }
+
+    /// delete specified mark
+    pub fn markDelete(self: *Editor, markNodeToDelete: *MarkNode) !void {
+        const markToDeleteNode = self.markTree.remove(markNodeToDelete);
+
+        try self.allocator.destroy(markToDeleteNode);
+    }
+
+    /// Set a mark to current point
+    pub fn markMoveToPoint(self: *Editor, markNode: *MarkNode) void {
+        self.markSetLocation(markNode, self.pointGetLocation());
+    }
+
+    /// Set current point to the location of the specified mark
+    pub fn pointMoveToMark(self: *Editor, markNode: *MarkNode) void {
+        self.pointSet(self.markGetLocation(markNode));
+    }
+
+    /// Return the location of the mark
+    pub fn markGetLocation(self: *Editor, markNode: *MarkNode) Location {
+        _ = self;
+
+        return markNode.value.point;
+
+    }
+
+    /// Move mark to location
+    pub fn markSetLocation(self: *Editor, markNode: *MarkNode, location: Location) void {
+        _ = self;
+
+        markNode.value.point = location;
+    }
+
+    /// True if point is at the specified mark
+    pub fn isPointAtMark(self: *Editor, markNode: *MarkNode) bool {
+        return 0 == self.pointGetLocation().compare(self.markGetLocation(markNode));
+    }
+
+    /// True if point is before specified mark
+    pub fn isPointBeforeMark(self: *Editor, markNode: *MarkNode) bool {
+        return -1 == self.pointGetLocation().compare(self.markGetLocation(markNode));
+    }
+
+    /// True if point is after specified mark
+    pub fn isPointAfterMark(self: *Editor, markNode: *MarkNode) bool {
+        return 1 == self.pointGetLocation().compare(self.markGetLocation(markNode));
+    }
+
+    /// Swap postitions of point and specified mark
+    pub fn swapPointAndMark(self: *Editor, markNode: *MarkNode) void {
+        const pointLocation = self.pointGetLocation();
+        const markLocation = self.markGetLocation(markNode);
+
+        self.pointSet(markLocation);
+        self.markSetLocation(markNode, pointLocation);
+    }
 };
