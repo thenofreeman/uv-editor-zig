@@ -137,4 +137,9 @@ pub const Editor = struct {
         return BufferError.NoSuchBuffer;
     }
 
+    /// Set buffer to the next in the chain and return the (name?id) of the new one
+    pub fn bufferSetNext(self: *Editor) ![]const u8 {
+        return (try self.bufferList.selectNext()).name;
+    }
+
 };
