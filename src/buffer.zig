@@ -1,6 +1,9 @@
 const std = @import("std");
 
+const azul = @import("azul.zig");
+
 const Location = @import("location.zig").Location;
+const Mark = @import("mark.zig").Mark;
 
 pub const Buffer = struct {
     /// A string name for users to refer to the buffer by
@@ -19,7 +22,9 @@ pub const Buffer = struct {
     numChars: usize,
     numLines: usize,
 
-    // markTree: AVLTree(Mark),
+    markTree: azul.SplayTree(Mark),
+
+    contents: []const u8, // Storage
 
     // Name of the file on disk. Empty string if none yet given
     // fileName: []const u8,
@@ -48,6 +53,7 @@ pub const Buffer = struct {
             .gapEnd = 1,
             .numChars = 15,
             .numLines = 1,
+            .markTree = azul.SplayTree(Mark).init(),
         };
     }
 

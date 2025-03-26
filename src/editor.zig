@@ -23,7 +23,6 @@ const Buffer = @import("buffer.zig").Buffer;
 
 pub const Editor = struct {
     bufferList: azul.SelectionList(Buffer),
-    markTree: azul.SplayTree(Mark),
 
     allocator: std.mem.Allocator,
 
@@ -42,7 +41,6 @@ pub const Editor = struct {
 
         return .{
             .bufferList = bufferList,
-            .markTree = azul.SplayTree(Mark).init(),
             .allocator = allocator,
         };
     }
@@ -253,7 +251,7 @@ pub const Editor = struct {
             .isFixed = isFixed,
         };
 
-        self.markTree.insert(newMarkNode);
+        self.bufferList.getSelected().?.markTree.insert(newMarkNode);
 
         return newMarkNode;
     }
