@@ -280,9 +280,11 @@ pub fn SelectionList(comptime T: type) type {
                 return ListError.EmptyListError;
             }
 
-            pub fn select(self: *Iterator) !T {
+            pub fn select(self: *Iterator) !*T {
                 if (self.current) |current| {
                     self.list.active = current;
+
+                    return &current.value;
                 }
 
                 return ListError.EmptyListError;
