@@ -240,7 +240,6 @@ pub fn SelectionList(comptime T: type) type {
             list: *SelectionList(T),
 
             pub fn hasNext(self: *Iterator) bool {
-                std.debug.print("{d}:{d}!\n", .{self.list.length, self.nextIndex});
                 return self.nextIndex < self.list.length;
             }
 
@@ -276,6 +275,14 @@ pub fn SelectionList(comptime T: type) type {
                     self.nextIndex -= 1;
 
                     return removedValue;
+                }
+
+                return ListError.EmptyListError;
+            }
+
+            pub fn select(self: *Iterator) !T {
+                if (self.current) |current| {
+                    self.list.active = current;
                 }
 
                 return ListError.EmptyListError;
