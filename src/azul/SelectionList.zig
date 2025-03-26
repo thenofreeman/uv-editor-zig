@@ -8,6 +8,7 @@ const ListError = error {
     NoSelectionMade,
 };
 
+/// A Circular Doubly-Linked List with an Active Node
 pub fn SelectionList(comptime T: type) type {
     return struct {
         const Self = @This();
