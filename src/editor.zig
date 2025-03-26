@@ -313,4 +313,38 @@ pub const Editor = struct {
         self.pointSet(markLocation);
         self.markSetLocation(markNode, pointLocation);
     }
+
+    /// Get char at point
+    /// error if at end of buffer
+    pub fn getChar(self: *Editor) u8 {
+        self.bufferList.getSelected().?.contents[self.pointGetLocation().pos];
+    }
+
+    /// Return n characters as a string starting at the point
+    /// return less than n if buffer end is reached first
+    pub fn getString(self: *Editor, n: usize) []const u8 {
+        const start = self.pointGetLocation().pos;
+
+        var end = start + n;
+
+        const trailingChars = self.getNumChars() - start;
+
+        if (n > trailingChars) {
+            end = start + trailingChars;
+        }
+
+        return self.bufferList.getSelected().?.contents[start..end];
+    }
+
+    /// Return the number of characters in the buffer
+    pub fn getNumChars(self: *Editor) usize {
+        return self.bufferList.getSelected().?.numChars;
+    }
+
+    /// Return the number of lines in the buffer
+    /// [should count an incomplete last line??]
+    pub fn getNumLines(self: *Editor) usize {
+        return self.bufferList.getSelected().?.numLines;
+    }
+
 };
