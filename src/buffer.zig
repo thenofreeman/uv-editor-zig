@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const Location = @import("location.zig");
+const Location = @import("location.zig").Location;
 
 pub const Buffer = struct {
     name: []const u8,
@@ -39,8 +39,8 @@ pub const Buffer = struct {
             .currentLine = 0,
             .gapStart = 0,
             .gapEnd = 1,
-            .numChars = 0,
-            .numLines = 0,
+            .numChars = 15,
+            .numLines = 1,
         };
     }
 

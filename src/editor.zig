@@ -12,6 +12,7 @@ const BufferError = error {
     NoSuchBuffer,
     ModifyingScratchBuffer,
     UseOfNullValue,
+    UnnamedError,
 };
 
 const Buffer = @import("buffer.zig").Buffer;
@@ -163,16 +164,16 @@ pub const Editor = struct {
 
     /// Move point forward n chars
     pub fn pointMoveForward(self: *Editor, n: usize) !void {
-        const currentCount = self.locationToCount(self.pointGetLocation());
+        const currentCount = try self.locationToCount(try self.pointGetLocation());
 
-        (try self.bufferList.getSelected()).point = self.countToLocation(currentCount + n);
+        (try self.bufferList.getSelected()).point = try self.countToLocation(currentCount + n);
     }
 
     /// Move point backward n chars
     pub fn pointMoveBackward(self: *Editor, n: usize) !void {
-        const currentCount = self.locationToCount(self.pointGetLocation());
+        const currentCount = try self.locationToCount(try self.pointGetLocation());
 
-        (try self.bufferList.getSelected()).point = self.countToLocation(currentCount - n);
+        (try self.bufferList.getSelected()).point = try self.countToLocation(currentCount - n);
     }
 
     pub fn pointGetLocation(self: *Editor) !Location {
@@ -186,17 +187,17 @@ pub const Editor = struct {
 
     /// Return point to the start of the buffer
     pub fn pointMoveBufferStart(self: *Editor) !Location {
-        (try self.bufferList.getSelected()).point = self.countToLocation(0);
+        (try self.bufferList.getSelected()).point = try self.countToLocation(0);
 
-        return self.pointGetLocation();
+        return try self.pointGetLocation();
     }
 
     /// Move point to the end of the buffer
     pub fn pointMoveBufferEnd(self: *Editor) !Location {
         var currentBuffer = (try self.bufferList.getSelected());
-        currentBuffer = self.countToLocation(currentBuffer.?.numChars);
+        currentBuffer.point = try self.countToLocation(currentBuffer.numChars);
 
-        return self.pointGetLocation();
+        return try self.pointGetLocation();
     }
 
     /// Returns 0 if same location, 1 if l1 after 12, else -1
@@ -218,8 +219,19 @@ pub const Editor = struct {
     pub fn countToLocation(self: *Editor, count: usize) !Location {
         const cbuff = (try self.bufferList.getSelected());
 
-        return if (count < cbuff.gapStart) .{ .pos = count }
-               else .{ .pos = count + (cbuff.gapEnd - cbuff.gapStrat) };
+        if (count > cbuff.numChars) {
+            return BufferError.UnnamedError;
+        }
+
+        return if (count >= cbuff.gapStart) .{ .pos = count }
+               else .{ .pos = count - (cbuff.gapEnd - cbuff.gapStart) };
+    }
+
+    // Get the pecentage of the point within in the buffer
+    // ie. how far in the file is it
+    pub fn pointPercentInBuffer(self: *Editor) !f32 {
+        return @as(f32, @floatFromInt(try locationToCount((try self.bufferList.getSelected()).point))) * 100.0
+                / @as(f32, @floatFromInt(try self.getNumChars()));
     }
 
 
