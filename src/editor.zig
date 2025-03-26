@@ -109,11 +109,8 @@ pub const Editor = struct {
     pub fn bufferDelete(self: *Editor, name: []const u8) !void {
         var it = self.bufferList.iterator();
 
-        var bufferWithName: *Buffer = undefined;
-
         while (it.hasNext()) {
-            bufferWithName = try it.next();
-            if (std.mem.eql(u8, name, bufferWithName.name)) {
+            if (std.mem.eql(u8, name, (try it.next()).name)) {
                 _ = try it.remove();
 
                 return;
@@ -129,11 +126,8 @@ pub const Editor = struct {
     pub fn bufferSetCurrent(self: *Editor, name: []const u8) !void {
         var it = self.bufferList.iterator();
 
-        var bufferWithName: *Buffer = undefined;
-
         while (it.hasNext()) {
-            bufferWithName = try it.next();
-            if (std.mem.eql(u8, name, bufferWithName.name)) {
+            if (std.mem.eql(u8, name, (try it.next()).name)) {
                 _ = try it.select();
 
                 return;
