@@ -1,5 +1,7 @@
 const std = @import("std");
+
 const SelectionList = @import("azul.zig").SelectionList;
+const Location = @import("location.zig").Location;
 
 const ImplementationError = error {
     NotYetImplemented,
@@ -153,5 +155,72 @@ pub const Editor = struct {
     pub fn bufferGetCurrentName(self: *Editor) ![]const u8 {
         return (try self.bufferList.getSelected()).name;
     }
+
+    /// Set the point to the specified location
+    pub fn pointSet(self: *Editor, location: Location) !void {
+        (try self.bufferList.getSelected()).point = location;
+    }
+
+    /// Move point forward n chars
+    pub fn pointMoveForward(self: *Editor, n: usize) !void {
+        const currentCount = self.locationToCount(self.pointGetLocation());
+
+        (try self.bufferList.getSelected()).point = self.countToLocation(currentCount + n);
+    }
+
+    /// Move point backward n chars
+    pub fn pointMoveBackward(self: *Editor, n: usize) !void {
+        const currentCount = self.locationToCount(self.pointGetLocation());
+
+        (try self.bufferList.getSelected()).point = self.countToLocation(currentCount - n);
+    }
+
+    pub fn pointGetLocation(self: *Editor) !Location {
+        return (try self.bufferList.getSelected()).point;
+    }
+
+    /// Get the line number that the point is on
+    pub fn pointGetLine(self: *Editor) !usize {
+        return (try self.bufferList.getSelected()).currentLine;
+    }
+
+    /// Return point to the start of the buffer
+    pub fn pointMoveBufferStart(self: *Editor) !Location {
+        (try self.bufferList.getSelected()).point = self.countToLocation(0);
+
+        return self.pointGetLocation();
+    }
+
+    /// Move point to the end of the buffer
+    pub fn pointMoveBufferEnd(self: *Editor) !Location {
+        var currentBuffer = (try self.bufferList.getSelected());
+        currentBuffer = self.countToLocation(currentBuffer.?.numChars);
+
+        return self.pointGetLocation();
+    }
+
+    /// Returns 0 if same location, 1 if l1 after 12, else -1
+    pub fn compareLocations(self: *Editor, l1: Location, l2: Location) i32 {
+        _ = self;
+
+        return l1.compare(l2);
+    }
+
+    /// Converts a Location to the number of characters between start and location
+    pub fn locationToCount(self: *Editor, location: Location) !usize {
+        const cbuff = (try self.bufferList.getSelected());
+
+        return if (location.pos < cbuff.gapStart) location.pos
+               else location.pos + (cbuff.gapEnd - cbuff.gapStart);
+    }
+
+    /// Converts a count (absolute position) to a location
+    pub fn countToLocation(self: *Editor, count: usize) !Location {
+        const cbuff = (try self.bufferList.getSelected());
+
+        return if (count < cbuff.gapStart) .{ .pos = count }
+               else .{ .pos = count + (cbuff.gapEnd - cbuff.gapStrat) };
+    }
+
 
 };
