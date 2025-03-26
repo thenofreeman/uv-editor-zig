@@ -34,7 +34,7 @@ pub const Buffer = struct {
 
         return .{
             .name = name,
-            .contents = "THIS IS A TEST!",
+            .contents = "THIS-IS-A-TEST!",
             .point = Location.init(),
             .currentLine = 0,
             .gapStart = 0,
