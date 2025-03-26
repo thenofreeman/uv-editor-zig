@@ -120,6 +120,8 @@ pub const Editor = struct {
             }
         }
 
+        // TODO: if no next, re-create scratch buffer and set it to current
+
         return BufferError.NoSuchBuffer;
     }
 
