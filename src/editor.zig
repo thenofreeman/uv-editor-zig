@@ -142,4 +142,11 @@ pub const Editor = struct {
         return (try self.bufferList.selectNext()).name;
     }
 
+    /// Rename the current buffer
+    pub fn bufferRenameCurrent(self: *Editor, name: []const u8) !void {
+        // TODO: verifiy not scratch buffer
+
+        (try self.bufferList.getSelected()).name = name;
+    }
+
 };
