@@ -1,17 +1,19 @@
 const std = @import("std");
 
+const Location = @import("location.zig");
+
 pub const Buffer = struct {
     name: []const u8,
 
-    // gapStart: usize,
-    // gapEnd: usize,
+    gapStart: usize,
+    gapEnd: usize,
 
-    // point: Location,
+    point: Location,
 
-    // currentLine: usize,
+    currentLine: usize,
 
-    // numChars: usize,
-    // numLines: usize,
+    numChars: usize,
+    numLines: usize,
 
     // markTree: AVLTree(Mark),
 
@@ -33,6 +35,12 @@ pub const Buffer = struct {
         return .{
             .name = name,
             .contents = "THIS IS A TEST!",
+            .point = Location.init(),
+            .currentLine = 0,
+            .gapStart = 0,
+            .gapEnd = 1,
+            .numChars = 0,
+            .numLines = 0,
         };
     }
 
