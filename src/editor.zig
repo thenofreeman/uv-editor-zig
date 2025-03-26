@@ -149,4 +149,9 @@ pub const Editor = struct {
         (try self.bufferList.getSelected()).name = name;
     }
 
+    /// Get the name of the current buffer
+    pub fn bufferGetCurrentName(self: *Editor) ![]const u8 {
+        return (try self.bufferList.getSelected()).name;
+    }
+
 };
