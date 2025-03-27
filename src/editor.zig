@@ -72,6 +72,10 @@ pub const Editor = struct {
         return self.bufferList.length;
     }
 
+    pub fn getActiveBuffer(self: *Editor) *Buffer {
+        return self.bufferList.getSelected().?;
+    }
+
     pub fn bufferGetByName(self: *Editor, name: []const u8) !*Buffer {
         var it = self.bufferList.iterator();
 
@@ -153,17 +157,17 @@ pub const Editor = struct {
     pub fn bufferRenameCurrent(self: *Editor, name: []const u8) void {
         // TODO: verifiy not scratch buffer
 
-        self.bufferList.getSelected().?.name = name;
+        self.getActiveBuffer().name = name;
     }
 
     /// Get the name of the current buffer
     pub fn bufferGetCurrentName(self: *Editor) []const u8 {
-        return self.bufferList.getSelected().?.name;
+        return self.getActiveBuffer().name;
     }
 
     /// Set the point to the specified location
     pub fn pointSet(self: *Editor, location: Location) void {
-        self.bufferList.getSelected().?.point = location;
+        self.getActiveBuffer().point = location;
     }
 
     /// Move point forward n chars
@@ -181,24 +185,24 @@ pub const Editor = struct {
     }
 
     pub fn pointGetLocation(self: *Editor) Location {
-        return self.bufferList.getSelected().?.point;
+        return self.getActiveBuffer().point;
     }
 
     /// Get the line number that the point is on
     pub fn pointGetLine(self: *Editor) usize {
-        return self.bufferList.getSelected().?.currentLine;
+        return self.getActiveBuffer().currentLine;
     }
 
     /// Return point to the start of the buffer
     pub fn pointMoveBufferStart(self: *Editor) Location {
-        self.bufferList.getSelected().?.point = self.countToLocation(0);
+        self.getActiveBuffer().point = self.countToLocation(0);
 
         return self.pointGetLocation();
     }
 
     /// Move point to the end of the buffer
     pub fn pointMoveBufferEnd(self: *Editor) Location {
-        const cbuff = self.bufferList.getSelected().?;
+        const cbuff = self.getActiveBuffer();
 
         self.pointSet(self.countToLocation(cbuff.numChars));
 
@@ -214,7 +218,7 @@ pub const Editor = struct {
 
     /// Converts a Location to the number of characters between start and location
     pub fn locationToCount(self: *Editor, location: Location) usize {
-        const cbuff = self.bufferList.getSelected().?;
+        const cbuff = self.getActiveBuffer();
 
         return if (location.pos < cbuff.gapStart) location.pos
                 else location.pos + (cbuff.gapEnd - cbuff.gapStart);
@@ -222,7 +226,7 @@ pub const Editor = struct {
 
     /// Converts a count (absolute position) to a location
     pub fn countToLocation(self: *Editor, count: usize) Location {
-        const cbuff = self.bufferList.getSelected().?;
+        const cbuff = self.getActiveBuffer();
 
         var adjustedCount = count;
 
@@ -237,7 +241,7 @@ pub const Editor = struct {
     // Get the pecentage of the point within in the buffer
     // ie. how far in the file is it
     pub fn pointPercentInBuffer(self: *Editor) f32 {
-        return @as(f32, @floatFromInt(locationToCount(self.bufferList.getSelected().?.point))) * 100.0
+        return @as(f32, @floatFromInt(locationToCount(self.getActiveBuffer().point))) * 100.0
                 / @as(f32, @floatFromInt(self.getNumChars()));
     }
 
@@ -251,7 +255,7 @@ pub const Editor = struct {
             .isFixed = isFixed,
         };
 
-        self.bufferList.getSelected().?.markTree.insert(newMarkNode);
+        self.getActiveBuffer().markTree.insert(newMarkNode);
 
         return newMarkNode;
     }
@@ -315,7 +319,7 @@ pub const Editor = struct {
     /// Get char at point
     /// error if at end of buffer
     pub fn getChar(self: *Editor) u8 {
-        self.bufferList.getSelected().?.contents[self.pointGetLocation().pos];
+        self.getActiveBuffer().contents[self.pointGetLocation().pos];
     }
 
     /// Return n characters as a string starting at the point
@@ -331,66 +335,65 @@ pub const Editor = struct {
             end = start + trailingChars;
         }
 
-        return self.bufferList.getSelected().?.contents[start..end];
+        return self.getActiveBuffer().contents[start..end];
     }
 
     /// Return the number of characters in the buffer
     pub fn getNumChars(self: *Editor) usize {
-        return self.bufferList.getSelected().?.numChars;
+        return self.getActiveBuffer().numChars;
     }
 
     /// Return the number of lines in the buffer
     /// [should count an incomplete last line??]
     pub fn getNumLines(self: *Editor) usize {
-        return self.bufferList.getSelected().?.numLines;
+        return self.getActiveBuffer().numLines;
     }
 
     /// Get the name assiciated with the current buffer
     pub fn getFileName(self: *Editor) []const u8 {
-        return self.bufferList.getSelected().?.fileName;
+        return self.getActiveBuffer().fileName;
     }
 
     /// Set the file name for the current buffer
     pub fn setFileName(self: *Editor, name: []const u8) void {
-        self.bufferList.getSelected().?.fileName = name;
+        try self.getActiveBuffer().renameFile(name);
     }
 
     /// Write the buffer to the named file
     /// convert between internal and external representations
     /// clear the modified flag and update time
     pub fn bufferWrite(self: *Editor) !void {
-        _ = self;
-        // TODO: Write method
+        try self.getActiveBuffer().write();
     }
 
     /// Clear the buffer and read the current named file into it
     /// convert between external and internal representations
     /// clear the modified flag and update time
     pub fn bufferRead(self: *Editor) !void {
-        _ = self;
-        // TODO: Write method
+        try self.getActiveBuffer().read();
     }
 
     /// Inserts contents of filename into the current buffer at point
     /// convert between external and internal representations
     /// set modified flag if inserted file was not empty
     pub fn bufferInsert(self: *Editor, filename: []const u8) !void {
-        _ = self;
         _ = filename;
-        // TODO: Write method
 
+        // TODO: read contents from file
+
+        const contents = "";
+
+        try self.getActiveBuffer().insert(contents);
     }
 
     /// true if file was changed since last read/written
     pub fn isFileChanged(self: *Editor) bool {
-        _ = self;
-        // TODO: Write method
-
+        self.getActiveBuffer().fileHasChanged();
     }
 
     /// Get the value of the mod flag
     pub fn getBufferModified(self: *Editor) bool {
-        return self.bufferList.getSelected.?.isModified;
+        return self.getActiveBuffer().isModified;
     }
 
     /// Set the state of mod flag
@@ -398,7 +401,7 @@ pub const Editor = struct {
     /// is sure that any changes should be discarded
     /// set by any insertion, deletion, or changes to buffer
     pub fn setBufferModified(self: *Editor, modified: bool) void {
-        self.bufferList.getSelected().?.isModified = modified;
+        self.getActiveBuffer().isModified = modified;
     }
 
 };

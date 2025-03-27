@@ -60,4 +60,27 @@ pub const Buffer = struct {
     pub fn clear(self: *Buffer) void {
         self.contents = "";
     }
+
+    pub fn write(self: *Buffer) !void {
+        _ = self;
+    }
+
+    pub fn read(self: *Buffer) !void {
+        _ = self;
+    }
+
+    pub fn renameFile(self: *Buffer, name: []const u8) !void {
+        _ = self;
+        _ = name;
+    }
+
+    pub fn insert(self: *Buffer, contents_to_insert: []const u8) !void {
+        _ = self;
+        _ = contents_to_insert;
+    }
+
+    pub fn fileHasChanged(self: *Buffer) bool {
+        _ = self;
+    }
+
 };
