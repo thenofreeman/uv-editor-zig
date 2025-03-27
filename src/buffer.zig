@@ -26,13 +26,13 @@ pub const Buffer = struct {
 
     contents: []const u8, // Storage
 
-    // Name of the file on disk. Empty string if none yet given
-    // fileName: []const u8,
-    // The last time in which the buffer and the associated file were identical
-    // Helps determine if a file was altered by another process (ie editing out of sync)
-    // fileTime: u64,
-    // Has the editor modifed the buffer since it was last written or read
-    // isModified: bool,
+    /// Name of the file on disk. Empty string if none yet given
+    fileName: []const u8,
+    /// The last time in which the buffer and the associated file were identical
+    /// Helps determine if a file was altered by another process (ie editing out of sync)
+    fileTime: u64,
+    /// Has the editor modifed the buffer since it was last written or read
+    isModified: bool,
 
     // List of active modes
     // Must be sorted

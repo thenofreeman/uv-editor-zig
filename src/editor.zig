@@ -345,4 +345,60 @@ pub const Editor = struct {
         return self.bufferList.getSelected().?.numLines;
     }
 
+    /// Get the name assiciated with the current buffer
+    pub fn getFileName(self: *Editor) []const u8 {
+        return self.bufferList.getSelected().?.fileName;
+    }
+
+    /// Set the file name for the current buffer
+    pub fn setFileName(self: *Editor, name: []const u8) void {
+        self.bufferList.getSelected().?.fileName = name;
+    }
+
+    /// Write the buffer to the named file
+    /// convert between internal and external representations
+    /// clear the modified flag and update time
+    pub fn bufferWrite(self: *Editor) !void {
+        _ = self;
+        // TODO: Write method
+    }
+
+    /// Clear the buffer and read the current named file into it
+    /// convert between external and internal representations
+    /// clear the modified flag and update time
+    pub fn bufferRead(self: *Editor) !void {
+        _ = self;
+        // TODO: Write method
+    }
+
+    /// Inserts contents of filename into the current buffer at point
+    /// convert between external and internal representations
+    /// set modified flag if inserted file was not empty
+    pub fn bufferInsert(self: *Editor, filename: []const u8) !void {
+        _ = self;
+        _ = filename;
+        // TODO: Write method
+
+    }
+
+    /// true if file was changed since last read/written
+    pub fn isFileChanged(self: *Editor) bool {
+        _ = self;
+        // TODO: Write method
+
+    }
+
+    /// Get the value of the mod flag
+    pub fn getBufferModified(self: *Editor) bool {
+        return self.bufferList.getSelected.?.isModified;
+    }
+
+    /// Set the state of mod flag
+    /// most often used to manually clear the mod flag where user
+    /// is sure that any changes should be discarded
+    /// set by any insertion, deletion, or changes to buffer
+    pub fn setBufferModified(self: *Editor, modified: bool) void {
+        self.bufferList.getSelected().?.isModified = modified;
+    }
+
 };
